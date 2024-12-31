@@ -1,0 +1,47 @@
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+services:
+  client:
+    build:
+      context: ./client
+    environment:
+      NODE_ENV: production
+    ports:
+      - "28500:28500"
+  server:
+    build:
+      context: ./miranda
+    environment:
+      NODE_ENV: production
+    ports:
+      - "28001:28001"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:17.2
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=example
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    ports:
+      - "28000:5432"
+    expose:
+      - 28000
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: postgres/localpswd.txt
+
